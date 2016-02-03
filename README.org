@@ -1,0 +1,43 @@
+* img2array
+
+Useful little commandline tool for embedded applications. Converts an
+image from PNG, JPG, TGA, BMP, GIF or flattened PSD to C arrays. Uses
+[[https://github.com/nothings/stb][STB]] for image parsing, no other dependencies. *Arrays are currently
+always exported in Little Endian order.*
+
+** Usage
+
+#+BEGIN_SRC text
+  Usage:  img2array [options] image [ > dest.h ]
+    -a STRING array alignment prefix
+    -e STRING array alignment suffix (default: "__attribute__ ((aligned (4)))")
+    -n STRING array name (default: "image")
+    -m INT    destination color mode (default 0):
+        0 = argb8888
+        1 = rgb888
+        2 = rgb565
+        3 = argb4444
+#+END_SRC
+
+#+BEGIN_SRC text
+$ img2array -m 3 -n logo48 logo.png
+#pragma once
+#include <stdint.h>
+
+const uint8_t logo48_argb4444[4608] __attribute__ ((aligned (4))) = {
+0x00, 0xf0, 0x00, 0xf0, 0x00, 0xf0, 0x00, 0xf0, 0x00, 0xf0, 0x00, 0xf0, 0x00, 0xf0, 0x00, 0xf0, 
+...
+};
+#+END_SRC
+
+** Building this project
+
+#+BEGIN_SRC bash
+git clone git@github.com:postspectacular/img2array.git
+cd img2array
+make
+#+END_SRC
+
+** License
+
+This project is open source and licensed under the [[http://www.apache.org/licenses/LICENSE-2.0][Apache Software License 2.0]].
