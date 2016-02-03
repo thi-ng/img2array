@@ -1,17 +1,32 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <assert.h>
 
-//#define STBI_ONLY_PNG
+// Uncomment any of the next lines limit image format support:
+// #define STBI_ONLY_PNG
+// #define STBI_ONLY_JPEG
+// #define STBI_ONLY_TGA
+// #define STBI_ONLY_GIF
+// #define STBI_ONLY_BMP
+// #define STBI_ONLY_PSD
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
 #define STB_DEFINE
 #include "stb.h"
 
+#define ALIGN_PREFIX ""
+#define ALIGN_SUFFIX "__attribute__ ((aligned (4)))"
 #define NUM_COLOR_MODES 4
+
+#ifdef _WIN32
+#define PATH_SEP '\\'
+#else
+#define PATH_SEP '/'
+#endif
 
 typedef struct {
     char *id;
@@ -36,17 +51,20 @@ static ColorMode modes[NUM_COLOR_MODES] = {
 
 static Config config = {.mode = &modes[0],
                         .modeID = 0,
-                        .name = "image",
-                        .alignStart = "",
-                        .alignEnd = "__attribute__ ((aligned (4)))"};
+                        .name = NULL,
+                        .alignStart = ALIGN_PREFIX,
+                        .alignEnd = ALIGN_SUFFIX};
 
 static void usage();
+static void filename(char *path, char *dest, uint32_t size);
 static int convert(const Config *config);
 
 int main(int argc, char **argv) {
     char c;
+    char name[64];
     uint8_t id;
-    while ((c = getopt(argc, argv, ":a:e:m:n:")) != -1) {
+    uint8_t err = 0;
+    while (!err && (c = getopt(argc, argv, ":a:e:m:n:")) != -1) {
         switch (c) {
         case 'a':
             config.alignStart = optarg;
@@ -60,27 +78,38 @@ int main(int argc, char **argv) {
                 config.modeID = id;
                 config.mode = &modes[id];
             } else {
-                usage();
-                return 1;
+                fprintf(stderr, "invalid color mode: %d\n", id);
+                err = 1;
             }
             break;
         case 'n':
             config.name = optarg;
             break;
         case '?':
-            fprintf(stderr, "Option -%c requires an argument.\n", optopt);
-            return 1;
+            fprintf(stderr, "Option -%c requires an argument\n", optopt);
+            err = 1;
+            break;
         default:
-            usage();
-            return 1;
+            err = 1;
         }
     }
-    if (optind >= argc) {
+    if (!err && optind >= argc) {
         fprintf(stderr, "Missing input file\n");
+        err = 1;
+    }
+    if (!err && optind < argc - 1) {
+        fprintf(stderr, "Extraneous arguments given\n");
+        err = 1;
+    }
+    if (err) {
         usage();
         return 1;
     }
     config.path = argv[optind];
+    if (config.name == NULL) {
+        filename(config.path, name, 64);
+        config.name = name;
+    }
     return convert(&config);
 }
 
@@ -134,12 +163,35 @@ static int convert(const Config *config) {
     return 0;
 }
 
+static void filename(char *path, char *dest, uint32_t size) {
+    char *start = strrchr(path, PATH_SEP);
+    if (start != NULL) {
+        start++;
+    } else {
+        start = path;
+    }
+    char *end = strrchr(path, '.');
+    if (end == NULL) {
+        end = strrchr(path, '\0');
+    }
+    uint32_t len = (uint32_t)(end - start);
+    if (len > size - 1) {
+        len = size - 1;
+    }
+    strncpy(dest, start, len);
+    dest[len] = 0;
+}
+
 static void usage() {
     fprintf(stderr, "Usage:\timg2array [options] image [ > dest.h ]\n");
-    fprintf(stderr, "\t-a STRING\tarray alignment prefix\n");
-    fprintf(stderr, "\t-e STRING\tarray alignment suffix (default: "
-                    "\"__attribute__ ((aligned (4)))\")\n");
-    fprintf(stderr, "\t-n STRING\tarray name (default: \"image\")\n");
+    fprintf(stderr,
+            "\t-a STRING\tarray alignment prefix\n\t\t\t(default: \"%s\")\n",
+            ALIGN_PREFIX);
+    fprintf(stderr,
+            "\t-e STRING\tarray alignment suffix\n\t\t\t(default: \"%s\")\n",
+            ALIGN_SUFFIX);
+    fprintf(stderr, "\t-n STRING\tarray base name\n"
+                    "\t\t\t(default: image filename w/o ext)\n");
     fprintf(stderr, "\t-m INT\t\tdestination color mode (default 0):\n");
     for (uint8_t i = 0; i < NUM_COLOR_MODES; i++) {
         fprintf(stderr, "\t\t\t%u = %s\n", i, modes[i].id);

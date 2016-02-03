@@ -10,17 +10,21 @@ always exported in Little Endian order.*
 #+BEGIN_SRC text
   Usage:  img2array [options] image [ > dest.h ]
     -a STRING array alignment prefix
-    -e STRING array alignment suffix (default: "__attribute__ ((aligned (4)))")
-    -n STRING array name (default: "image")
+              (default: "")
+    -e STRING array alignment suffix
+              (default: "__attribute__ ((aligned (4)))")
+    -n STRING array base name
+              (default: image filename w/o ext)
     -m INT    destination color mode (default 0):
-        0 = argb8888
-        1 = rgb888
-        2 = rgb565
-        3 = argb4444
+              0 = argb8888
+              1 = rgb888
+              2 = rgb565
+              3 = argb4444
 #+END_SRC
 
 #+BEGIN_SRC text
 $ img2array -m 3 -n logo48 logo.png
+
 #pragma once
 #include <stdint.h>
 
@@ -33,10 +37,13 @@ const uint8_t logo48_argb4444[4608] __attribute__ ((aligned (4))) = {
 ** Building this project
 
 #+BEGIN_SRC bash
-git clone git@github.com:postspectacular/img2array.git
+git clone git@github.com:thi-ng/img2array.git
 cd img2array
 make
 #+END_SRC
+
+If you want to reduce the tool's filesize (default: ~256KB) and limit
+image format support, uncomment some of the =#define='s in =main.c=.
 
 ** License
 
