@@ -130,24 +130,24 @@ static int convert(const Config *config) {
             config->alignStart, config->name, mode->id, destlen, config->alignEnd);
 
     for (uint32_t i = 0, k = mode->row; i < srclen; i += 4) {
-        uint8_t a = pixels[i];
-        uint8_t b = pixels[i + 1];
-        uint8_t c = pixels[i + 2];
-        uint8_t d = pixels[i + 3];
+        uint8_t r = pixels[i];
+        uint8_t g = pixels[i + 1];
+        uint8_t b = pixels[i + 2];
+        uint8_t a = pixels[i + 3];
         switch (config->modeID) {
         case 0:
-            fprintf(stdout, "0x%02x, 0x%02x, 0x%02x, 0x%02x", a, b, c, d);
+            fprintf(stdout, "0x%02x, 0x%02x, 0x%02x, 0x%02x", b, g, r, a);
             break;
         case 1:
-            fprintf(stdout, "0x%02x, 0x%02x, 0x%02x", a, b, c);
+            fprintf(stdout, "0x%02x, 0x%02x, 0x%02x", b, g, r);
             break;
         case 2:
-            fprintf(stdout, "0x%02x, 0x%02x", (a >> 3) | ((b & 0x1c) << 3),
-                    (b >> 5) | (c & 0xf8));
+            fprintf(stdout, "0x%02x, 0x%02x", (b >> 3) | ((g & 0x1c) << 3),
+                    (g >> 5) | (r & 0xf8));
             break;
         case 3:
-            fprintf(stdout, "0x%02x, 0x%02x", (b & 0xf0) | (a >> 4),
-                    (d & 0xf0) | (c >> 4));
+            fprintf(stdout, "0x%02x, 0x%02x", (g & 0xf0) | (b >> 4),
+                    (a & 0xf0) | (r >> 4));
             break;
         default:
             break;
