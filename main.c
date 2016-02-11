@@ -124,10 +124,13 @@ static int convert(const Config *config) {
     const ColorMode *mode = config->mode;
     const uint32_t srclen = w * h * 4;
     const uint32_t destlen = w * h * mode->stride;
-    fprintf(stdout,
-            "#pragma once\n#include <stdint.h>\n%s\nconst uint8_t %s_%s[%u] "
-            "%s = {\n",
-            config->alignStart, config->name, mode->id, destlen, config->alignEnd);
+    fprintf(stdout, "/* Generated with http://thi.ng/img2array */\n"
+                    "#pragma once\n#include <stdint.h>\n"
+                    "%s\n"
+                    "const uint8_t %s_%s[%u] "
+                    "%s = {\n",
+            config->alignStart, config->name, mode->id, destlen,
+            config->alignEnd);
 
     for (uint32_t i = 0, k = mode->row; i < srclen; i += 4) {
         uint8_t r = pixels[i];
